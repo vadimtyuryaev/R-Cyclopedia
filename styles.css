@@ -1,0 +1,130 @@
+/* ── Layout & Structure ──────────────────────────────────── */
+body {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  background-color: #ffffff;
+  font-family: "Source Serif Pro", Georgia, serif;
+  font-size: 18px; 
+  line-height: 1.8;
+  color: #2c2c2c;
+}
+
+.main-container {
+  margin-left: 420px; 
+  max-width: 850px;   
+  margin-right: auto;
+  padding: 4rem 2rem;
+}
+
+/* ── Table of Contents (Outline) ─────────────────────────── */
+#TOC {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 340px; 
+  height: 100vh;
+  overflow-y: auto;
+  background-color: #fcfcfd; 
+  border-right: 1px solid #eee;
+  padding: 3rem 2rem; 
+  font-family: "Source Sans Pro", sans-serif;
+  font-size: 1.1rem;
+}
+
+#TOC a { color: #1565c0; text-decoration: none; }
+#TOC a:hover { color: #0d47a1; text-decoration: underline; }
+
+/* ── Typography ──────────────────────────────────────────── */
+h1, h2, h3 {
+  font-family: "Source Sans Pro", sans-serif;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin-top: 3rem;
+}
+
+h1 { font-size: 2.3rem; border-bottom: 2px solid #2196F3; padding-bottom: 0.5rem; }
+h2 { font-size: 1.8rem; border-bottom: 1px solid #e0e0e0; padding-bottom: 0.3rem; }
+
+/* ── Code Blocks (Max Visibility & Opaque) ───────────────── */
+pre, code {
+  font-family: "JetBrains Mono", "Fira Code", "Courier New", monospace;
+}
+
+pre.r, pre.sourceCode, pre.python {
+  /* SOLID DEEP CHARCOAL - No transparency */
+  background-color: #1e1e1e !important; 
+  color: #ffffff !important; /* Force default text to white */
+  border-left: 8px solid #2196F3;
+  border-radius: 10px;
+  padding: 2.2rem;
+  margin: 3.5rem 0;
+  
+  /* LARGE FONT */
+  font-size: 1.15rem; 
+  line-height: 1.6;
+  
+  overflow-x: auto;
+  box-shadow: 0 12px 35px rgba(0,0,0,0.2);
+  opacity: 1 !important;
+}
+
+/* HIGH CONTRAST SYNTAX FIXES */
+/* These force visibility for parts of the code that often "disappear" */
+
+pre.sourceCode span.dv, /* Numbers */
+pre.sourceCode span.fl { 
+  color: #f8bbd0 !important; font-weight: bold; /* Bright Pink/White for numbers */
+}
+
+pre.sourceCode span.st, /* Strings */
+pre.sourceCode span.dt { 
+  color: #c3e88d !important; /* Bright Green */
+}
+
+pre.sourceCode span.cf, /* Control Flow (if, for) */
+pre.sourceCode span.kw { 
+  color: #82aaff !important; font-weight: bold; /* Bright Blue */
+}
+
+pre.sourceCode span.co { 
+  color: #757575 !important; font-style: italic; /* Visible Grey Comments */
+}
+
+/* Inline code remains light */
+code {
+  background-color: #f1f3f5;
+  color: #c62828;
+  padding: 0.25em 0.45em;
+  border-radius: 4px;
+  font-size: 0.95em;
+  font-weight: 500;
+}
+
+/* Output Blocks (Results) */
+pre.bg-output, pre.output {
+  background-color: #f8f9fb;
+  color: #333;
+  border: 1px solid #dcdfe3;
+  border-left: 8px solid #4caf50;
+  font-size: 1.05rem;
+  padding: 1.5rem;
+}
+
+/* ── Callouts ────────────────────────────────────────────── */
+.note, .warning, blockquote {
+  padding: 1.8rem;
+  border-radius: 0 10px 10px 0;
+  margin: 2.5rem 0;
+}
+
+.note { background: #e8f5e9; border-left: 6px solid #4caf50; }
+.warning { background: #fff3e0; border-left: 6px solid #ff9800; }
+blockquote { background: #e3f2fd; border-left: 6px solid #2196F3; font-size: 1.1rem; }
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 1300px) {
+  body { display: block; }
+  #TOC { position: relative; width: auto; height: auto; border-right: none; }
+  .main-container { margin-left: auto; padding: 2rem; }
+}

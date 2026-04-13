@@ -1,0 +1,1208 @@
+---
+title: "Code Companion: Mastering R for Data Science 2026"
+author: "Vadim Tyuryaev"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    number_sections: true
+    theme: paper
+    highlight: tango
+    code_folding: show
+    code_download: true
+    df_print: paged
+    css: styles.css
+header-includes:
+  - |
+    <meta name="description" content="Mastering R for Data Science: Essential Tips, Hidden Tricks, and Pro-Level Coding Workflows 2026.">
+    <meta name="keywords" content="R Programming, High-Performance Computing, Parallel Computing, GPU Acceleration, Neural Networks, NVIDIA, SVD, Reticulate, TensorFlow, Keras, Data Science.">
+    <meta name="author" content="Vadim Tyuryaev">
+    <meta name="robots" content="index, follow">
+    <meta property="og:title" content="R-Cyclopedia: The Ultimate R Guide">
+    <meta property="og:description" content="The Ultimate R Guide: Vectorization, Python Integration, Parallel Computing, and GPU-based Deep Learning with TensorFlow.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://vadimtyuryaev.github.io/R-Cyclopedia">
+    <meta property="og:image" content="https://vadimtyuryaev.github.io/R-Cyclopedia/preview-image.png">
+    <meta property="og:site_name" content="Vadim Tyuryaev’s Statistical Blog">
+---
+
+```{r setup, include=FALSE}
+# Global chunk options: evaluate code to show outputs, suppress messages/warnings
+knitr::opts_chunk$set(
+  eval      = TRUE,   
+  echo      = TRUE,
+  comment   = "#>",
+  message   = FALSE,
+  warning   = FALSE,
+  fig.align = "center",
+  fig.width = 9,
+  fig.height = 5
+)
+```
+
+---
+
+# Basics
+
+## Assign and Retrieve Values
+
+Utilize `assign()` and `get()` in loops when dealing with a dynamic number of 
+variables.
+
+```{r basics-assign}
+
+# assign the value of 2 to a newly created variable called var.1
+assign(paste("var", 1, sep="."),2)
+
+# retrive the value of the var.1 variable
+get("var.1")
+
+```
+```{r basics-assign-loop}
+
+set.seed(as.numeric(as.Date("1777-04-30")))
+
+# Create a data frame directly
+my_data = data.frame(
+  id = paste("rval", 1:5, sep = "_"),
+  value = rnorm(5)
+)
+
+print(my_data)
+
+```
+
+## Environment Scoping
+
+Create custom environments to control where R looks for variables, leveraging
+parent-child links.
+
+
+```{r basics-env-parent-child}
+
+defaults      = new.env()
+defaults$tax  = 0.15
+
+order         = new.env(parent = defaults)
+order$price   = 200
+
+# 'tax' is not in 'order', but is found via its parent environment
+order$total   = order$price * (1 + get("tax", envir = order))
+order$total
+
+```
+```{r env-parent-child}
+
+# Create a parent environment
+parent.env = new.env()
+
+# Add some variables to the parent environment
+parent.env$a = 10
+parent.env$b = 5
+
+# A simple calculation in the parent environment
+parent.env$sum_parent = parent.env$a + parent.env$b   # 15
+
+# Check what's in the global environment (you should NOT see a, b, or sum_parent)
+ls()                # default is ls(globalenv())
+
+# Check what's inside parent.env
+ls(parent.env)
+# [1] "a" "b" "sum_parent"
+
+# Try to access 'a' from the global environment (this should give an error)
+try(a, silent = FALSE)
+# Error: object 'a' not found
+
+# Correct way: explicitly get 'a' from parent.env
+get("a", envir = parent.env)        # 10
+
+```
+
+## Evaluate Expressions
+
+Dynamically construct and evaluate expressions from strings, or extract data from model calls.
+
+```{r basics-eval}
+
+# Define an expression
+expr = expression(sqrt(81))
+
+# Evaluate the expression
+result = eval(expr)
+
+# Print the result
+print(result)
+
+```
+
+```{r basics-eval-parse}
+
+# Dynamically construct an expression
+x = 12
+operation = "x ** 2"
+expr = parse(text = operation)
+
+# Evaluate the dynamically constructed expression
+result = eval(expr)
+
+# Print the result (returns 144)
+print(result)
+
+```
+
+```{r basics-eval-lm}
+
+set.seed(42)
+
+lm.data  = data.frame(x = 1:10, y = 2.5 * (1:10) + rnorm(10))
+lm.model = lm(y ~ x, data = lm.data)
+
+# Extract the original data frame via the stored call
+head(eval(lm.model$call$data), 3)
+
+```
+
+## For Loops and Preallocation
+
+```{r basics-for-loops}
+
+# basic usage
+for (i in 1:10){
+  print(i)
+}
+
+```
+
+```{r}
+
+library(tictoc)
+
+set.seed(1905)
+
+n_sims = 100000
+
+sim_means_grow = numeric(0)               # Empty vector
+
+tic("Without pre-allocation")
+for (i in seq_len(n_sims)) {
+  sim_means_grow = c(sim_means_grow, mean(rnorm(50)))
+}
+toc()
+
+
+
+sim_means_prealloc = numeric(n_sims)      # Pre-allocated vector
+
+tic("With pre-allocation")
+for (i in seq_len(n_sims)) {
+  sim_means_prealloc[i] = mean(rnorm(50))
+}
+
+toc()
+
+```
+
+> *Always preallocate storage before calculating for-loops to drastically improve efficiency*.
+
+```{r basics-for-bench}
+
+set.seed(1925)
+
+library(microbenchmark)
+
+n = 1e4 
+
+bench = microbenchmark(
+  prealloc = { 
+    v = numeric(n)
+    for (i in seq_len(n)) v[i] = i     # EFFICIENT 
+  },
+  grow = { 
+    v = numeric(0)
+    for (i in seq_len(n)) v = c(v, i)  # NOT EFFICIENT
+  },
+  times = 10
+)
+
+# 1. Save the filtered summary to a data frame
+bench_summary = summary(bench)[, c("expr", "median", "min", "max")]
+
+# 2. Round the numeric columns (columns 2, 3, and 4) to 0 decimal places
+bench_summary[, 2:4] = round(bench_summary[, 2:4], digits = 0)
+
+# 3. Print the clean results
+print(bench_summary)
+
+```
+
+## Memory & Path Management
+
+```{r basics-memory, eval=FALSE}
+
+rm(list = ls())      # Clear current environment
+gc()                 # Garbage collection
+.rs.restartR()       # Restart R session (RStudio only)
+
+getwd()              # Get current working directory
+setwd("..")          # Go one level up in the directory tree
+setwd("~")           # Go directly to the user's home directory
+
+```
+
+## RDS format
+
+```{r matrix-rds}
+
+# Create a sample 3x3 matrix
+sample_matrix = matrix(1:9, nrow = 3, ncol = 3)
+print(sample_matrix)
+
+# Save the matrix as an .rds file in the current directory
+saveRDS(sample_matrix, file = "./sample_matrix.rds")
+
+# Read the file back into a new variable to verify
+restored_matrix = readRDS("./sample_matrix.rds")
+
+# Check if the restored object is identical to the original
+identical(sample_matrix, restored_matrix)
+
+```
+
+## Advanced Indexing
+
+Use `which()` with `arr.ind = TRUE` to get row and column indices in data frames.
+
+```{r basics-which}
+x = c(3, 7, 2, 6, 7, 9, 1)
+
+which(x == 7)
+which(x > 5)
+x[which(x > 5)]
+
+```
+
+```{r basics-which-min-max}
+
+# indexes of maximum and minimum
+which.max(x) # [1] 6
+which.min(x) # [1] 7
+
+# Get the actual values 
+x[which.max(x)] # [1] 9
+x[which.min(x)] # [1] 1
+
+```
+```{r basics-which-arrind}
+
+df = data.frame(a = c(1, 3, 5), 
+                 b = c(5, 3, 1)
+                 )
+
+print(df)
+
+which(df > 3, arr.ind = TRUE)
+
+```
+
+---
+
+# Functions
+
+## Returning Multiple Objects
+
+Group multiple outputs (data, models, plots) into a single nested list.
+
+```{r functions-multi-return}
+
+# Define sample function with input parameters
+my_function = function(x, y){
+  
+  # Perform some operations
+  result1 = x^2
+  result2 = y^3
+  
+  # Perform additional operations
+  result3 = x^2+y^2
+  
+  # Combine results into a list
+  result_list      = list(
+    x_squared      = result1,
+    y_cubed        = result2,
+    sum_of_squares = result3
+  )
+  
+  # Return the list of results
+  return(result_list)
+}
+
+# Example usage of the function
+output = my_function(3, 5)
+
+# Access the third result (sum of 3^2 + 5^2)
+output$sum_of_squares
+
+```
+
+## Optional Arguments with Ellipsis (`...`)
+
+Pass varied arguments to internal functions using `...` .
+
+```{r functions-ellipsis}
+
+# Define the main plotting function
+plot_modern = function(x, y, ...) {
+  
+  # Internal function to create a stylized plot
+  internal_plot = function(x, y, ...) {
+    
+    # 1. Set a soft background color for the plot area
+    par(bg = "#f4f7f6", mar = c(5, 5, 4, 2))
+    
+    # 2. Initialize an empty plot window (type = "n") to lay down the grid first
+    plot(x, y, type = "n", bty = "n", ...)
+    
+    # 3. Add a clean white grid 
+    grid(nx = NULL, ny = NULL, col = "white", lty = 1, lwd = 1.5)
+    
+    # 4. Draw a smooth trendline underneath the points
+    lines(spline(x, y), col = "#b0bec5", lwd = 2)
+    
+    # 5. Plot the actual points, passing the ellipsis (...) for custom styling
+    points(x, y, ...)
+  }
+  
+  # Execute the internal function
+  internal_plot(x, y, ...)
+}
+
+
+# 1. Generate sample data
+set.seed(42)
+x = 1:15
+y = x^2 + rnorm(15, mean = 0, sd = 15)
+
+# 2. Draw the standard base R plot (Left side)
+plot(x, y, 
+     main = "Standard Base R Plot",
+     xlab = "X", ylab = "Y")
+
+# 3. Draw our custom modern plot (Right side)
+plot_modern(x, y, 
+            main = "Quadratic Growth Trajectory", 
+            xlab = "Time (X-axis)", 
+            ylab = "Value (Y-axis)", 
+            col  = "#ffffff",   # Point border color
+            bg   = "#ff6b6b",   # Point fill color (works with pch = 21)
+            pch  = 21,          # Filled circle 
+            cex  = 2,           # Point size
+            lwd  = 1.5,         # Border thickness
+            family = "sans")    # Modern font
+
+```
+
+## Multiple optional arguments with `do.call()`.
+
+```{r functions-do-call}
+
+# Define the main wrapper function
+process_and_plot = function(data, plot_args = list(), ...) {
+  
+  # Internal: Calculate statistics using arguments from the ellipsis (...)
+  calculate_summary = function(data, ...) {
+    summary(data, ...)
+  }
+  
+  # Internal: Create a histogram with modern default styling
+  create_histogram = function(data, main = "Histogram", xlab = "Values", 
+                               col = "#90CAF9", border = "white", breaks = 15) {
+    hist(data, main = main, xlab = xlab, col = col, border = border, breaks = breaks)
+  }
+  
+  # 1. Execute summary via do.call, passing along the ellipsis arguments
+  statistics = do.call(calculate_summary, list(data = data, ...))
+  
+  # 2. Inject data into plot_args and execute the histogram
+  plot_args$data = data
+  do.call(create_histogram, plot_args)
+  
+  # Implicitly return the statistics object
+  statistics
+}
+
+# Example usage
+set.seed(1812)
+sample_data = rnorm(100)
+
+# Define custom arguments to override the histogram defaults
+custom_plot_args = list(
+  main   = "Customized Distribution", 
+  col    = "#5C6BC0", 
+  border = "white", 
+  breaks = 25
+)
+
+# Call the function: 
+# 'digits' and 'quantile.type' flow into the ellipsis (...) for the summary
+# 'custom_plot_args' flows into the histogram
+example_stats = process_and_plot(
+  sample_data, 
+  plot_args     = custom_plot_args,
+  digits        = 2, 
+  quantile.type = 5
+)
+
+# Print the resulting summary table
+print(example_stats)
+
+```
+
+
+---
+
+# Data Structures and Matrix Math
+
+## Modifying Data Frames
+
+Recreate the structure of a data frame and populate it cleanly.
+
+```{r df-manipulation}
+
+# Create a sample data frame with some initial data
+sample_df = data.frame(
+  ID     = c(1, 2, 3),
+  Name   = c("Alice", "Bruce", "Candice"),
+  Age    = c(25, 30, 35),
+  Salary = c(50000, 55000, 60000)
+)
+
+# Print the sample data frame
+sample_df
+
+```
+
+```{r df-null}
+
+empty_df = sample_df[NULL, ]
+empty_df
+
+```
+
+```{r df-direct-assignment}
+
+# Fill the empty data frame by direct assignment
+empty_df[1, ] = list(ID = 4, Name = "David", Age = 28, Salary = 55000)
+empty_df[2, ] = list(ID = 5, Name = "Eva", Age = 32, Salary = 62000)
+
+empty_df
+
+```
+
+## Matrix Multiplication & Logistic Regression
+
+```{r maxtrix-multiplication-basics}
+
+# set seed
+set.seed(1918)
+
+# Define matrix A(2x3)
+A = matrix(c(1, 2, 3, 4, 5, 6), nrow = 2, ncol = 3)
+print(A)
+
+# Define matrix B(3x2)
+B = matrix(c(7, 8, 9, 10, 11, 12), nrow = 3, ncol = 2)
+print(B)
+
+# Perform regular matrix multiplication(2x2)
+C = A %*% B
+print(C)
+
+# Define matrix D(2x2) and fill it by rows
+D = matrix(c(2, 4, 6, 8), nrow = 2, ncol = 2, byrow=T)
+print(D)
+
+# Perform element-wise multiplication(2x2)
+F = C * D
+print(F)
+
+```
+
+```{r matrix-nn-train}
+
+simple_logistic_NN=function(X,y, W0,b0, num_epochs,learning_rate, verbose=F){
+  
+# X  -> n × num_features
+# y  -> n × 1
+# W0 -> num_features × 1
+# b0 -> 1 × 1
+
+  # define the sigmoid function
+  sigmoid = function(z) {
+   1 / (1 + exp(-z))
+  }
+
+  # obtain the number of data points and features
+  n=dim(X)[1]
+  num_features=dim(X)[2]
+
+  # merge weights and biases and add a column of 1s into X
+  W_matrix=matrix(rbind(W0,b0), nrow=num_features+1,ncol=1)
+  X_matrix=matrix(cbind(X, rep(1,n)),nrow=n,ncol=num_features+1)
+  
+  # preallocate a data frame to save losses and a matrix to save gradients
+  col_names = c("Epoch", "Loss") 
+  df_loss = data.frame(matrix(NA, nrow = num_epochs, ncol = length(col_names))) 
+  colnames(df_loss) = col_names
+  Gradients = matrix(NA,nrow= num_features+1, ncol=num_epochs)
+  
+# Training loop
+for (epoch in 1:num_epochs)
+  {
+  
+  # compute the forward pass
+  z = X_matrix%*% W_matrix 
+  y_hat = sigmoid(z)
+  
+  # calculate loss using binary cross-entropy
+  loss = -mean(y * log(y_hat) + (1 - y) * log(1 - y_hat))
+  
+  # save epoch and loss
+  df_loss[epoch,]=c(epoch, loss)
+  
+  # compute gradients
+  dW = t(X_matrix) %*% (y_hat - y) / n
+  
+  # save gradient
+  Gradients[,epoch]=dW
+  
+  # update weights and bias
+  W_matrix = W_matrix - learning_rate * dW
+  
+  if(verbose!=FALSE){
+  # Print loss every verbose epochs
+    if (epoch %% verbose == 0) {
+      cat("Epoch:", epoch, "Loss:", loss,"Weights:", W_matrix[1:num_features,],
+          "Bias:", W_matrix[num_features+1,], "\n")
+                               }
+                 }
+   }
+  
+  l=list("W_est"     = W_matrix[1:num_features,], 
+         "b_est"     = W_matrix[num_features+1,],
+         "Loss_DF"   = df_loss, 
+         "Gradients" = Gradients)
+  return(l)
+}
+
+```
+
+```{r matrix-nn-example}
+
+set.seed(1986)
+
+# Generate a synthetic dataset
+n_examp_1 = 1000
+X_examp_1 = matrix(rnorm(n_examp_1 * 2), ncol = 2)
+y_examp_1 = as.numeric(X_examp_1[,1] + X_examp_1[,2] > 0)
+
+# Initialize weights and bias
+W0_examp_1 = matrix(runif(2), nrow = 2)
+b0_examp_1 = runif(1)
+
+logistic_NN_training_examp_1=simple_logistic_NN(X=X_examp_1, y=y_examp_1, 
+                                                W0=W0_examp_1,b0=b0_examp_1, 
+                                                num_epochs=1000,
+                                                learning_rate=0.01, 
+                                                verbose=100)
+
+# Print final weights and bias
+cat("Estimated Weights:", logistic_NN_training_examp_1$W_est, "\n")
+cat("Estimated Bias:", logistic_NN_training_examp_1$b_est, "\n")
+
+```
+
+## Singular Value Decomposition (SVD) from Scratch
+
+```{r matrix-svd}
+
+svd_custom = function(A) {
+  # Check if A is a matrix
+  if (!is.matrix(A)) stop("Input must be a matrix")
+  
+  # Step 1: Compute A^T * A
+  AtA = t(A) %*% A
+  
+  # Step 2: Eigen decomposition of A^T * A
+  eigen_AtA = eigen(AtA)
+  
+  # Eigenvalues and eigenvectors
+  eigenvalues = eigen_AtA$values
+  V = eigen_AtA$vectors
+  
+  # Step 3: Compute singular values
+  singular_values = sqrt(eigenvalues)
+  
+  # Step 4: Compute U matrix
+  U = matrix(0, nrow = nrow(A), ncol = nrow(A))
+  for (i in 1:nrow(A)) {
+    if (singular_values[i] != 0) {
+      U[, i] = (A %*% V[, i]) / singular_values[i]
+    }
+  }
+  
+  # Step 5: Construct Sigma matrix
+  Sigma = diag(singular_values)
+  
+  # Return the SVD components
+  list(U = U, Sigma = Sigma, V = V)
+}
+
+```
+
+
+```{r matrix-svd-example}
+
+set.seed(1903)
+
+A = matrix(rnorm(9), nrow = 3, ncol = 3)
+svd_result =svd_custom(A)
+
+# UVT^t == A (evaluates to TRUE)
+all.equal(svd_result$U%*%svd_result$Sigma%*%t(svd_result$V), A)
+
+```
+
+## Pre-allocate lists
+
+```{r preallocate-lists}
+
+# Preallocate the empty list with 3 elements
+n    = 3
+list = vector("list", length = n)
+
+# Fill in the first element with another list
+list[[1]] = list(a = 5, b = 8, c = 13)
+
+# Fill in the second element with a data frame
+list[[2]] = data.frame(Name = c("Zu", "Georges"), Age = c(3, 14))
+
+# Fill in the third element with a vector
+list[[3]] = c(21, 34, 55, 89, 144)
+
+list[[1]]$a
+list[[2]]$Age
+list[[3]]
+
+```
+
+## Python-Like Dictionaries in R
+
+Use environments for reference semantics and O(1) lookup.
+
+```{r dict-env}
+
+# First way using an environment 
+dict_env   = new.env()
+
+# Assign key-value pairs to the environment
+dict_env$a = 2
+dict_env$b = 7
+dict_env$c = 1
+
+# Add a new key-value pair
+dict_env$d = 8
+
+# Modify an existing value
+dict_env$a = 2
+
+# List all objects in the environment
+ls(dict_env)
+
+# Get a value by key
+get("c", envir = dict_env)
+
+```
+```{r dict-lists}
+
+# generates a set of 100 colors using the rainbow function.
+cols = rainbow(100)
+
+# create a sequence of the first 100 odd numbers starting from 1.
+numb = seq(1,200,2)
+
+# preallocate three lists to store the colors, the numbers, and the indices
+col_vals = vector("list",100)
+num_vals = vector("list",100)
+ind_vals = vector("list",100)
+
+# iterate
+for(c in 1:length(numb)){
+  col_vals[[c]] = cols[c]
+  num_vals[[c]] = numb[c]
+  ind_vals[[c]] = c
+}
+
+# retrieve the color associated with the number 157 ("#AD00FF")
+col_vals[[which(num_vals==157)]]
+
+# find the number that corresponds to the color "#AD00FF" (157)
+num_vals[[which(col_vals=="#AD00FF")]]
+
+#check if the color and the number are associated with the same index (TRUE)
+ind_vals[[which(col_vals=="#AD00FF")]]==ind_vals[[which(num_vals==157)]]
+
+```
+
+## Vectors
+
+```{r vectors-types, eval=FALSE}
+
+nums   = c(1, 2, 3)               # numeric
+chars  = c("a", "b", "c")         # character
+logic  = c(TRUE, FALSE, TRUE)     # logical
+seq_10 = 1:10                     # integer sequence
+rep_pi = rep(pi, 3)               # repeat a value
+
+```
+
+```{r vectors-examples}
+
+x = 1:5
+y = seq(10, 50, 10)
+
+x + y        # 11 22 33 44 55
+x^2 + log(y) # combined numeric ops
+
+vals = c(4, 7, 11, 3, 9)
+
+# Keep elements > 5
+vals[vals > 5]                  # 7 11 9
+
+# Replace outliers with NA
+vals[vals > 10] = NA           # 4 7 NA 3 9
+print(vals)
+
+```
+---
+
+# Vectorized Iterations
+
+R's `apply` family avoids explicit loops with concise, vectorized C-level execution.
+
+```{r apply}
+
+# Sample 4×3 matrix
+mat = matrix(1:12, nrow = 4, byrow = TRUE)
+
+# Column means
+apply(mat, 2, mean)
+
+# Row standard deviations
+apply(mat, 1, sd)
+
+```
+
+```{r lapply}
+
+set.seed(1942)
+
+# 1. Create a list of score vectors -----------------------------
+scores = lapply(1:5, \(i) rnorm(50, mean = 70 + i * 5, sd = 8))
+names(scores) = paste0("Class_", 1:5)
+
+# 2. Compute the mean score for every class ---------------------
+class_means = lapply(scores, mean)
+
+class_means
+
+```
+
+```{r mapply}
+
+# Create 3 normally distributed vectors with different means and SDs
+set.seed(1914)
+params = data.frame(mu = c(0, 5, 10), sd = c(1, 2, 3))
+
+samples = mapply(
+  FUN = rnorm,
+  n   = 5,                  # recycled for each call
+  mean = params$mu,
+  sd   = params$sd,
+  SIMPLIFY = FALSE          # keep as list of vectors
+)
+
+str(samples)
+
+```
+
+```{r sapply}
+
+nums = list(a = 1:4, b = 5:7, c = 8:9)
+
+# Sums each element returning a numeric vector
+sapply(nums, sum)
+
+vec = 1:6
+sapply(vec, function(x) x^2)
+
+```
+
+---
+
+# Parallel Computing
+
+```{r parallel-setup}
+library(parallel)
+n_cores = max(1L, detectCores() - 1L)
+print(n_cores)
+```
+
+Use `parLapply` for cross-platform parallel execution, or `mclapply` for Unix-based systems.
+
+```{r parallel-parlapply}
+
+# Expensive function: Monte Carlo estimate of pi
+estimate_pi = function(n = 1e6) {
+  x = runif(n)
+  y = runif(n)
+  mean(x^2 + y^2 <= 1) * 4
+}
+
+n_rep = 30
+
+# ---------------------------------------------------------
+# 1. SEQUENTIAL RUN
+# ---------------------------------------------------------
+set.seed(1986)
+
+t_seq = system.time({
+  seq_results = lapply(1:n_rep, function(i) {
+    t0 = proc.time()["elapsed"]
+    pi_est = estimate_pi()
+    
+    # Return both the estimate and the time it took
+    data.frame(run = i, pi_est = pi_est, elapsed = proc.time()["elapsed"] - t0)
+  })
+})
+
+# Bind into a single data frame
+seq_df = do.call(rbind, seq_results)
+
+# ---------------------------------------------------------
+# 2. PARALLEL RUN
+# ---------------------------------------------------------
+n_cores = max(1, detectCores() - 1)
+cl = makeCluster(n_cores)
+clusterExport(cl, varlist = "estimate_pi")
+
+set.seed(1986)
+
+t_par = system.time({
+  par_results = parLapply(cl, 1:n_rep, function(i) {
+    t0 = proc.time()["elapsed"]
+    pi_est = estimate_pi()
+    
+    # Return both the estimate and the time it took
+    data.frame(run = i, pi_est = pi_est, elapsed = proc.time()["elapsed"] - t0)
+  })
+})
+
+stopCluster(cl)
+
+# Bind into a single data frame
+par_df = do.call(rbind, par_results)
+
+# ---------------------------------------------------------
+# 3. COMPARE RESULTS
+# ---------------------------------------------------------
+# Check if the estimates are mathematically equivalent
+all.equal(seq_df$pi_est, par_df$pi_est)
+
+# Print the timing results
+cat("Total Sequential Time:     ", round(t_seq["elapsed"], 3), "seconds\n")
+cat("Total Parallel Time:       ", round(t_par["elapsed"], 3), "seconds\n\n")
+
+cat("Avg Sequential per run:    ", round(mean(seq_df$elapsed), 3), "seconds\n")
+cat("Avg Parallel per run:      ", round(mean(par_df$elapsed), 3), "seconds\n")
+
+```
+
+```{r}
+
+# Install if needed: install.packages(c("future", "future.apply"))
+library(future)
+library(future.apply)
+
+# 1. Define the workhorse function
+estimate_pi = function(n = 1e6) {
+  mean(runif(n)^2 + runif(n)^2 <= 1) * 4
+}
+
+n_rep = 20
+
+# 2. Tell R your "plan" (run asynchronously across multiple background sessions)
+plan(multisession, workers = availableCores() - 1)
+
+set.seed(1986)
+
+# 3. Execute! future_lapply acts just like lapply, but routes traffic asynchronously
+t_future = system.time({
+  
+  # future.seed = TRUE ensures random numbers are safely generated across cores
+  future_results = future_lapply(1:n_rep, function(i) {
+    t0 = proc.time()["elapsed"]
+    pi_est = estimate_pi()
+    data.frame(run = i, pi_est = pi_est, elapsed = proc.time()["elapsed"] - t0)
+  }, future.seed = TRUE)
+  
+})
+
+# 4. Bind the results
+future_df = do.call(rbind, future_results)
+
+# 5. Always explicitly close background workers when done
+plan(sequential)
+
+cat("Total Future Async Time: ", round(t_future["elapsed"], 3), "seconds\n")
+cat("Average Future Async per run: ", round(mean(future_df$elapsed), 3), "seconds\n")
+
+```
+---
+
+# Running Python Code in R
+
+Execute Python scripts and pass data frames back and forth using `{reticulate}`.
+
+```{r}
+
+library(reticulate)
+
+# Show which Python is being used
+py_config()
+
+#reticulate::py_install("pandas")
+
+```
+
+
+```{r reticulate-inline, eval=FALSE}
+
+# Run Python inline
+py_run_string("
+x = [1, 2, 3]
+y = [i**2 for i in x]
+")
+
+# Access Python variables natively in R
+py$y
+py$x
+
+```
+```{r}
+
+np = import("numpy")
+
+# Create NumPy arrays and compute statistics
+a = np$array(c(1, 2, 3, 4, 5))
+mean_a = np$mean(a)
+mean_a
+
+```
+
+```{r}
+
+# Create a standard R dataframe
+r_df = data.frame(a = 1:3, b = c(4, 5, 6))
+
+```
+
+```{python}
+
+import pandas as pd
+
+# Pull the dataframe from R into Python
+py_df = r.r_df
+
+# Perform our Python operations
+py_df['sum'] = py_df['a'] + py_df['b']
+
+```
+
+```{r}
+
+# Pull the modified dataframe back from Python into R
+final_r_df = py$py_df
+
+print(final_r_df)
+
+```
+---
+
+# GPU Computing in R
+
+> *Note: The following code blocks are structured but intentionally unevaluated (`eval=FALSE`) in this notebook to prevent rendering failures on environments lacking CUDA/GPU configurations.*
+
+> *Note on Windows Compatibility: Enabling GPU acceleration for TensorFlow in a Windows environment is not a "plug-and-play" process. This requires a specific infrastructure stack: a WSL2 (Windows Subsystem for Linux) installation, an Ubuntu R Server and the dedicated GPU version of TensorFlow. For a step-by-step walkthrough on configuring this environment, please refer to Chapter 6 of my Medium article, where I cover the full backend setup required to get R and your GPU talking to each other.*
+
+## GPU Initialization
+
+```{r gpu-verify, eval=FALSE}
+
+library(tensorflow)
+library(keras3)
+
+# Check for the GPU
+tf$config$list_physical_devices("GPU")
+
+```
+
+## Neural Network for Non-Linear Classification
+
+```{r gpu-nn-config, eval=FALSE}
+
+set.seed(1925)
+
+n_per_class <- 2000
+
+# Inner circle (class 0)
+theta1 <- runif(n_per_class, 0, 2 * pi)
+r1     <- rnorm(n_per_class, mean = 1, sd = 0.08)
+x1     <- cbind(r1 * cos(theta1), r1 * sin(theta1))
+y1     <- rep(0, n_per_class)
+
+# Outer ring (class 1)
+theta2 <- runif(n_per_class, 0, 2 * pi)
+r2     <- rnorm(n_per_class, mean = 2, sd = 0.08)
+x2     <- cbind(r2 * cos(theta2), r2 * sin(theta2))
+y2     <- rep(1, n_per_class)
+
+# Full dataset
+x <- rbind(x1, x2)
+y <- c(y1, y2)
+
+# Shuffle
+idx <- sample(seq_len(nrow(x)))
+x   <- x[idx, ]
+y   <- y[idx]
+
+# Train / test split
+n    <- nrow(x)
+n_tr <- floor(0.8 * n)
+
+x_train <- x[1:n_tr, ]
+y_train <- y[1:n_tr]
+
+x_test  <- x[(n_tr + 1):n, ]
+y_test  <- y[(n_tr + 1):n]
+
+model <- keras_model_sequential() %>%
+  layer_dense(units = 32, activation = "relu", input_shape = 2) %>%
+  layer_dense(units = 64, activation = "relu") %>%
+  layer_dense(units = 32, activation = "relu") %>%
+  layer_dense(units = 1, activation = "sigmoid")  # binary classification
+
+model %>%
+  compile(
+    optimizer = "adam",
+    loss      = "binary_crossentropy",
+    metrics   = "accuracy"
+  )
+
+# summary(model)
+
+batch_size <- 128
+epochs     <- 20
+
+t <- system.time({
+  history <- model %>%
+    fit(
+      x = x_train, y = y_train,
+      batch_size      = batch_size,
+      epochs          = epochs,
+      validation_split = 0.2,
+      verbose         = 2
+    )
+})
+
+cat("Training elapsed time (GPU-backed TF):", t["elapsed"], "seconds\n")
+
+model %>%
+  evaluate(x_test, y_test, verbose = 0)
+
+```
+
+```{r gpu-nn-plot, eval=FALSE}
+
+library(ggplot2)
+library(viridis)
+
+# Define grid for visualization
+x_min <- min(x[,1]) - 0.2
+x_max <- max(x[,1]) + 0.2
+y_min <- min(x[,2]) - 0.2
+y_max <- max(x[,2]) + 0.2
+
+grid <- expand.grid(
+  x1 = seq(x_min, x_max, length.out = 400), # Higher resolution for crispness
+  x2 = seq(y_min, y_max, length.out = 400)
+)
+
+# Predict probabilities
+grid$prob <- as.numeric(model %>% predict(as.matrix(grid), verbose = 0))
+
+ggplot() +
+  # 1. Background Grid/Heatmap (Smooth Ukrainian Flag gradient)
+  # Low prob (Inner) -> Blue. High prob (Outer) -> Yellow.
+  geom_raster(data = grid, aes(x = x1, y = x2, fill = prob), interpolate = TRUE) +
+  
+  # 2. Add a strong decision boundary line
+  geom_contour(data = grid, aes(x = x1, y = x2, z = prob), 
+               breaks = 0.5, color = "white", linetype = "solid", linewidth = 1.2) +
+  
+  # 3. Add the points (Small and translucent so they don't hide the boundary)
+  geom_point(aes(x = x[,1], y = x[,2], color = factor(y)), size = 0.6, alpha = 0.3) +
+  
+  # --- Color Palettes (Ukrainian Flag Theme) ---
+  
+  # Background Fill: Cividis provides a great smooth blue-to-yellow gradient
+  scale_fill_viridis_c(option = "cividis", direction = -1,
+                       name = "Predicted\nProbability", limits = c(0, 1),
+                       breaks = c(0, 0.5, 1), labels = c("Inner", "Boundary", "Outer")) +
+  
+  # Points Color: Force them to pop against the blue/yellow background
+  scale_color_manual(values = c("black", "red"), 
+                     name = "True Class", labels = c("Inner (0)", "Outer (1)")) +
+  
+  # --- Theme and Labs ---
+  labs(
+    title = "Neural Network classification Boundary",
+    subtitle = "Modern TensorFlow/Keras on GPU via WSL2",
+    x = "Feature 1", 
+    y = "Feature 2"
+  ) +
+  coord_fixed() + # Critical: keeps the circle circular
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "right",
+    # Center the title and make it bold
+    plot.title = element_text(face = "bold", size = 18, hjust = 0.5),
+    plot.subtitle = element_text(hjust = 0.5, size = 12),
+    plot.caption = element_text(size = 9, color = "gray50"),
+    panel.grid.major = element_line(color = "gray90"),
+    plot.background = element_rect(fill = "white", color = NA)
+  )
+
+)
+```
+
+---
+
+# Session Info {.unnumbered}
+
+```{r session-info}
+sessionInfo()
+```
