@@ -24,13 +24,7 @@ throughout.
 
 ------------------------------------------------------------------------
 
-<figure>
-<img src="C:/Users/vadim/Downloads/R-Cyclopedia/NN_GPU_WSL2.png"
-alt="GPU-Accelerated Neural Networks: Bridging R, Python, CUDA, Tensorflow and WSL2 on Windows (Section 6)." />
-<figcaption aria-hidden="true">GPU-Accelerated Neural Networks: Bridging
-R, Python, CUDA, Tensorflow and WSL2 on Windows (Section
-6).</figcaption>
-</figure>
+## ![GPU-Accelerated Neural Networks: Bridging R, Python, CUDA, Tensorflow and WSL2 on Windows (Section 6).](C:/Users/vadim/Downloads/R-Cyclopedia/NN_GPU_WSL2.png)
 
 ## Article
 
