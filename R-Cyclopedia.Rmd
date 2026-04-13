@@ -19,14 +19,13 @@ output:
 header-includes:
   - |
     <meta name="description" content="Mastering R for Data Science: Essential Tips, Hidden Tricks, and Pro-Level Coding Workflows 2026.">
-    <meta name="keywords" content="R Programming, High-Performance Computing, Parallel Computing, GPU Acceleration, Neural Networks, NVIDIA, SVD, Reticulate, TensorFlow, Keras, Data Science.">
+    <meta name="keywords" content="R Programming, High-Performance Computing, Parallel Computing, GPU Acceleration, Neural Networks, NVIDIA, SVD, Reticulate, TensorFlow, Keras, Data Science, Python.">
     <meta name="author" content="Vadim Tyuryaev">
     <meta name="robots" content="index, follow">
     <meta property="og:title" content="R-Cyclopedia: The Ultimate R Guide">
     <meta property="og:description" content="The Ultimate R Guide: Vectorization, Python Integration, Parallel Computing, and GPU-based Deep Learning with TensorFlow.">
     <meta property="og:type" content="article">
-    <meta property="og:url" content="https://vadimtyuryaev.github.io/R-Cyclopedia">
-    <meta property="og:image" content="https://vadimtyuryaev.github.io/R-Cyclopedia/preview-image.png">
+    <meta property="og:url" content="https://medium.com/@vadimtyuryaev/mastering-r-for-data-science-essential-tips-hidden-tricks-and-pro-level-coding-workflows-2026-07968149b7e2">
     <meta property="og:site_name" content="Vadim Tyuryaev’s Statistical Blog">
 ---
 

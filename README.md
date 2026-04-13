@@ -24,13 +24,28 @@ throughout.
 
 ------------------------------------------------------------------------
 
+<figure>
+<img src="C:/Users/vadim/Downloads/R-Cyclopedia/NN_GPU_WSL2.png"
+alt="GPU-Accelerated Neural Networks: Bridging R, Python, CUDA, Tensorflow and WSL2 on Windows (Section 6)." />
+<figcaption aria-hidden="true">GPU-Accelerated Neural Networks: Bridging
+R, Python, CUDA, Tensorflow and WSL2 on Windows (Section
+6).</figcaption>
+</figure>
+
 ## Article
 
 **Mastering R for Data Science: Essential Tips, Hidden Tricks, and
 Pro-Level Coding Workflows 2026**
 
-[Read on Medium →](https://medium.com/@vadimtyuryaev) *(Link to be
-updated on publication)*
+[Read on Medium
+→](https://medium.com/@vadimtyuryaev/mastering-r-for-data-science-essential-tips-hidden-tricks-and-pro-level-coding-workflows-2026-07968149b7e2)
+
+------------------------------------------------------------------------
+
+## Notebook
+
+[Fully Executed Notebook
+→](https://vadimtyuryaev.github.io/R-Cyclopedia/)
 
 ------------------------------------------------------------------------
 
@@ -100,17 +115,6 @@ classification** task trained on GPU and evaluated with a `ggplot2`
 decision boundary visualization.
 
 ------------------------------------------------------------------------
-
-## Repository Structure
-
-``` text
-R-Cyclopedia/
-├── R-Cyclopedia.Rmd        # R Markdown source (knits to notebook)
-├── R-Cyclopedia.html       # Rendered HTML companion
-├── styles.css              # Custom styling for the HTML notebook
-├── README.md
-└── LICENSE
-```
 
 # Core Stack
 
