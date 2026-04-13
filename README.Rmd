@@ -21,11 +21,8 @@ The notebook covers six progressively advanced topics, ranging from foundational
 ---
 
 ![GPU-Accelerated Neural Networks: Bridging R, Python, CUDA, Tensorflow and WSL2 on Windows (Section 6).](NN_GPU_WSL2.png)
----
 
 ## Article
-
-**Mastering R for Data Science: Essential Tips, Hidden Tricks, and Pro-Level Coding Workflows 2026**
 
 [Read on Medium →](https://medium.com/@vadimtyuryaev/mastering-r-for-data-science-essential-tips-hidden-tricks-and-pro-level-coding-workflows-2026-07968149b7e2)
 
